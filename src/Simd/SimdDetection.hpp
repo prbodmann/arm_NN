@@ -33,7 +33,7 @@
 #include <memory>
 
 #include <limits.h>
-
+#include <iostream>
 #ifndef SIMD_CHECK_PERFORMANCE
 #define SIMD_CHECK_PERFORMANCE()
 #endif
@@ -287,8 +287,8 @@ namespace Simd
             \param [in] threadNumber - a number of work threads. It useful for multi core CPU. Use value -1 to auto choose of thread number.
             \return a result of this operation.
         */
-        bool Init(const Size & imageSize, double scaleFactor = 1.1, const Size & sizeMin = Size(0, 0),
-            const Size & sizeMax = Size(INT_MAX, INT_MAX), const View & roi = View(), ptrdiff_t threadNumber = -1)
+        bool Init(const Size & imageSize,  ptrdiff_t threadNumber = 8, double scaleFactor = 1.1, const Size & sizeMin = Size(0, 0),
+            const Size & sizeMax = Size(INT_MAX, INT_MAX), const View & roi = View())
         {
             if (_data.empty())
                 return false;
@@ -325,6 +325,7 @@ namespace Simd
 
             for (size_t i = 0; i < _levels.size(); ++i)
             {
+
                 Level & level = *_levels[i];
                 View mask = level.roi;
                 Rect rect = level.rect;
@@ -333,10 +334,13 @@ namespace Simd
                     FillMotionMask(motionRegions, level, rect);
                     mask = level.mask;
                 }
+
                 if (rect.Empty())
                     continue;
+
                 for (size_t j = 0; j < level.hids.size(); ++j)
                 {
+
                     Hid & hid = level.hids[j];
 
                     hid.Detect(mask, rect, level.dst, _threadNumber, level.throughColumn);
@@ -344,7 +348,7 @@ namespace Simd
                     AddObjects(candidates[hid.data->tag], level.dst, rect, hid.data->size, level.scale,
                         level.throughColumn ? 2 : 1, hid.data->tag);
                 }
-            }
+            } 
 
             objects.clear();
             for (typename Candidates::iterator it = candidates.begin(); it != candidates.end(); ++it)
@@ -355,7 +359,7 @@ namespace Simd
 
     private:
 
-        typedef void * Handle;
+        typedef void* Handle;
 
         struct Data
         {
@@ -387,11 +391,15 @@ namespace Simd
                 SIMD_CHECK_PERFORMANCE();
 
                 Size s = dst.Size() - data->size;
-                View m = mask.Region(s, View::MiddleCenter);
-                Rect r = rect.Shifted(-data->size / 2).Intersection(Rect(s));
-                Simd::Fill(dst, 0);
-                ::SimdDetectionPrepare(handle);
 
+                View m = mask.Region(s, View::MiddleCenter);
+
+                Rect r = rect.Shifted(-data->size / 2).Intersection(Rect(s));
+
+                Simd::Fill(dst, 0);
+
+                ::SimdDetectionPrepare(handle);
+              
                 Parallel(r.top, r.bottom, [&](size_t thread, size_t begin, size_t end)
                 {
                     detect(handle, m.data, m.stride, r.left, begin, r.right, end, dst.data, dst.stride);
@@ -562,6 +570,7 @@ namespace Simd
         {
             Simd::Fill(level.mask, 0);
             rect = Rect();
+
             for (size_t i = 0; i < rects.size(); i++)
             {
                 Rect r = rects[i] / level.scale;

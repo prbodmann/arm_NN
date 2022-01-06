@@ -17,29 +17,31 @@
 * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* SOFTWARE. 
 */
 #ifndef __SimdParallel_hpp__
 #define __SimdParallel_hpp__
 
-#include <vector>
+#include <vector>  
 #include <thread>
 #ifndef SIMD_FUTURE_DISABLE
 #include <future>
 #endif
-
+#include <iostream>
 namespace Simd
 {
     template<class Function> inline void Parallel(size_t begin, size_t end, const Function & function, size_t threadNumber, size_t blockAlign = 1)
     {
+
 #ifdef SIMD_FUTURE_DISABLE
         function(0, begin, end);
 #else
         threadNumber = std::min<size_t>(threadNumber, std::thread::hardware_concurrency());
-        if (threadNumber <= 1 || size_t(blockAlign*1.5) >= (end - begin))
+        if (threadNumber <= 1 || size_t(blockAlign*1.5) >= (end - begin)){               
             function(0, begin, end);
+        }
         else
         {
             std::vector<std::future<void>> futures;
@@ -50,15 +52,23 @@ namespace Simd
             size_t blockEnd = blockBegin + blockSize;
 
             for (size_t thread = 0; thread < threadNumber && blockBegin < end; ++thread)
+
             {
+
                 futures.push_back(std::move(std::async(std::launch::async, [blockBegin, blockEnd, thread, &function] { function(thread, blockBegin, blockEnd); })));
                 blockBegin += blockSize;
                 blockEnd = std::min(blockBegin + blockSize, end);
+
             }
 
-            for (size_t i = 0; i < futures.size(); ++i)
+            for (size_t i = 0; i < futures.size(); ++i){
+
+                while(!futures[i].valid()); 
+
                 futures[i].wait();
-        }
+               
+            }
+        }   
 #endif
     }
 }
