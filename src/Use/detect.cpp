@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     Detection detection;
  
     detection.Load(argv[1]);//"../../data/cascade/haar_face_0.xml"
-    detection.Init(image.Size());
+    detection.Init(image.Size(),atoi(argv[3]));
     Detection::Objects objects;
     detection.Detect(image, objects);    
     for (size_t i = 0; i < objects.size(); ++i){
