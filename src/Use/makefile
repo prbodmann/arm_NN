@@ -1,13 +1,12 @@
 LFLAGS= -L../../build 
-CFLAGS= -g -I../ -std=c++11 -Ofast
+CFLAGS=  -g -I../ -std=c++11 -Ofast -Wall -Wextra 
 LIBS= -Bstatic -lSimd -lrt -Bdynamic -lpthread
-OBJS= ${EXEC_NAME}.o
+OBJS= ${EXEC_NAME}.o ${EXEC_NAME}_gen.o
 EXEC_NAME=detect
 HFILES=../Simd/SimdParallel.hpp
-all: ${EXEC_NAME}
-
-${EXEC_NAME}: ${OBJS} makefile
-	${CXX} -Wl,${LFLAGS} -o ${EXEC_NAME} ${OBJS} ${LIBS}
+all: ${OBJS} makefile
+	${CXX} -Wl,${LFLAGS} -o ${EXEC_NAME} ${EXEC_NAME}.o ${LIBS}
+	${CXX} -Wl,${LFLAGS} -o ${EXEC_NAME}_gen ${EXEC_NAME}_gen.o ${LIBS}
 
 -include $(EXEC_NAME).d
 
